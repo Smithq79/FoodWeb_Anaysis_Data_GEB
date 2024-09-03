@@ -1,0 +1,832 @@
+---
+title: "Halls Cave Temporal Analysis"
+author: "DS & QS"
+date: "updated `r format(Sys.time(), '%m/%d/%y')` "
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+font size: 11pt
+geometry: margin=1in
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Load packages
+
+```{r}
+library(igraph)
+library(ggplot2)
+library(tidyverse)
+library(RColorBrewer)
+library(lme4) #package for running mixed-effects models
+library(lmerTest) #package for extracting p-values form lme4 models
+library(stringr)
+library(bipartite)
+library(cowplot)
+library(ppcor)
+library(forcats)
+library(dplyr)
+```
+
+
+## Import datasets
+
+* `interval_dat` is the set of species found in each time interval. There are 16 time intervals. Each column is a time interval with species in rows. Columns have different number of rows. ***Note that the time intervals are ordered in reverse chronological order, so that the most recent interval is first***
+
+* `climate_dat` contains some climate variables for each time interval. ***double check this*** but Variables include means and CVs of precipitation, max temperature and min temperature, as well as "calculated average temperature".
+
+* `mat_raw` is the overall matrix of consumer-resource relationships. Resources are listed in rows and consumers are listed in columns. Note that some species are listed twice--once for Pleistocene and once for Holocene--if their diet at different periods were estimated using stable isotopes. These species are listed with suffix "_pleistocene" and "_holocene" respectively. 
+
+* `spp_attrs` is a dataframe that contains attribute information for different species, such as "extinct/extant/introduced" status, mass, and trophic category. 
+```{r}
+interval_dat=read.csv("Data/Time_Intervals_introduced.csv", check.names = FALSE)
+
+climate_dat=read.csv("Data/Halls Cave Climate Data for 16 Time Intervals.csv", check.names = FALSE)
+
+names(climate_dat) <- iconv(names(climate_dat), to = "ASCII", sub = "")
+
+mat_raw=as.matrix(read.csv("Data/Matrix.csv", row.names=1))
+
+spp_attrs=read.csv("Data/spp_attributes.csv")
+
+plei_sites=read.csv("Data/Pleistocene_Sites.csv")
+
+holo_sites=read.csv("Data/Holocene_Sites.csv")
+
+mods_per_bin=read.csv("Data/mods_per_bin.csv") #Used for actual species counts (See 7.3)
+```
+
+## 1. Data prep for analysis
+
+### 1.1 Make the matrix square
+
+The raw matrix does not list the primary resources in the columns because they don't consume anything. However, we need the matrix to be square (columns and rows need to match up) in order to convert this data into a network. So we will add the primary resources to the columns--but all the cell values for these columns will be zero. 
+
+This will result in matrix object called `mat`, which will be the adjacency matrix for the network.
+
+```{r}
+#identify names of primary resources
+prim.res_names=rownames(mat_raw)[which(rownames(mat_raw)%in%colnames(mat_raw)==FALSE)]
+
+#make an empty matrix with primary resources as the columns
+primary_mat=matrix(0, ncol=length(prim.res_names), nrow=nrow(mat_raw), dimnames=list(rownames(mat_raw), prim.res_names))
+
+#bind primary resources matrix with the rest of the matrix
+mat=cbind(primary_mat, mat_raw)
+```
+
+### 1.2 Rearrange interval data as a list
+
+The `interval_dat` dataset is difficult to work with because each column has different rows (due to different number of species). So we will reorganize this data into a list in which each item is a string of species names that should be included. This list should also include the primary resources.
+
+The list will be called `time_list`
+
+```{r}
+time.list=list() #setup empty list
+for(i in 1:ncol(interval_dat)){
+  time.list[[i]]=append(as.character(interval_dat[,i]),prim.res_names) #take the names in a column and add primary resources
+  time.list[[i]]=time.list[[i]][time.list[[i]]!=""] #remove any empty spaces
+}
+names(time.list)=colnames(interval_dat) #add the names of the time intervals
+```
+
+Just to check out what this looks like, here are the first two time intervals.
+```{r}
+#list of species for each time bin
+time.list[1:2]
+```
+
+### 1.3 Deal with species Pleistocene vs. Holocene 
+
+As mentioned before, the raw matrix includes some species with separate data in the Pleistocene and Holocene, and those species names are listed with the suffix "_pleistocene" and "_holocene", respectively. This means that the row/column names of the raw matrix do not match up with the time interval data (`time_list`).
+
+To demonstrate, we can find species in the list for each time interval that don't match the species in matrices
+
+```{r}
+
+lapply(time.list, function(x) x[which(is.na(match(x, rownames(mat))))])
+```
+
+If we look for one of these species (e.g., Lepus californicus) in the row names of the matrix, we indeed find that the species has two different entries.
+```{r}
+rownames(mat)[str_detect(rownames(mat),"Lepus_californicus")]
+```
+
+So, what we need to do is add "_pleistocene" or "_holocene" to the name of these species ("Lepus_californicus", "Lynx_rufus", "Sylvileadus_sp", and "Panthera_onca") for the appropriate interval data. 
+
+Time bin 9 (11339-12656ybp) is the start of the Holocene (~11700 ybp), so we will add "_holocene" to intervals 1-8 and "_pleistocene" to intervals 9-16. The base function `gsub()` can be used to replace text strings. (The `str_replace` function in stringr would do the same thing.)
+
+```{r}
+######## TIME BIN 9 (11339-12656ybp) contains the start of the Holocene (~11700 ybp)
+
+for(i in 1:16){
+  if(i<9){
+    time.list[[i]]=gsub("Lynx_rufus", "Lynx_rufus_holocene",time.list[[i]])
+    time.list[[i]]=gsub("Lepus_californicus", "Lepus_californicus_holocene",time.list[[i]])
+    time.list[[i]]=gsub("Panthera_onca", "Panthera_onca_holocene",time.list[[i]])
+    
+    
+    
+  } else{
+    time.list[[i]]=gsub("Lynx_rufus", "Lynx_rufus_pleistocene",time.list[[i]])
+    time.list[[i]]=gsub("Lepus_californicus", "Lepus_californicus_pleistocene",time.list[[i]])
+    time.list[[i]]=gsub("Panthera_onca", "Panthera_onca_pleistocene",time.list[[i]])
+    
+  }
+}
+```
+
+Just to check, we can run the same code as above to see if there are still any mismatches between the species names in the matrix and in the time interval data. This should return a bunch of "character(0)" if we did this correctly.
+```{r}
+lapply(time.list, function(x) x[which(is.na(match(x, rownames(mat))))])
+```
+
+## 2. Generate consumer-resource matrices for each time interval
+
+```{r}
+time.mats=lapply(time.list, function(x) mat[rownames(mat) %in% x, rownames(mat) %in% x])
+```
+
+```{r}
+sapply(time.mats, dim)
+```
+
+## 3. Create and analyzing foodweb networks
+
+### 3.1. Creating the whole foodweb network for each time interval.
+
+We will use the igraph package functions to create networks from the consumer-resource matrices for each time interval. These will be "directed networks" with arrows going from resource to consumer, representing energy flow. 
+
+While we are converting the matrices into networks, we will also import trophic category as vertex attributes from the `spp_attrs` dataframe using a match function to look up the species.
+```{r}
+#Make a foodweb network of each interval
+time_nets=list()
+for(i in 1:length(time.mats)){
+  time_nets[[i]]=graph_from_adjacency_matrix(time.mats[[i]], "directed")
+  V(time_nets[[i]])$category=spp_attrs$Trophic_Category[match(V(time_nets[[i]])$name, spp_attrs$Binomial)]
+  V(time_nets[[i]])$category[V(time_nets[[i]])$name=="Mustela_frenata"]="carnivore"
+  V(time_nets[[i]])$category[V(time_nets[[i]])$name=="Mustela_erminea"]="carnivore"
+}
+```
+
+Here's one network:
+```{r}
+time_nets[[1]] 
+V(time_nets[[1]]) #show the nodes in the network
+```
+
+Plot one of the networks (the most recent time interval):
+
+```{r}
+plot(time_nets[[1]], vertex.label="")
+```
+
+### 3.2. Making use of node attributes
+
+Color the nodes based on trophic category:
+
+
+```{r}
+for(i in 1:length(time_nets)){
+  time_colors=vector(length=length(V(time_nets[[i]])))
+  time_colors[V(time_nets[[i]])$category=="browser"]="yellow"
+  time_colors[V(time_nets[[i]])$category=="grazer"]="blue"
+  time_colors[V(time_nets[[i]])$category=="carnivore"]="red"
+  time_colors[V(time_nets[[i]])$category=="mixed feeder"]="brown"
+  time_colors[V(time_nets[[i]])$category=="omnivore"]="orange"
+  time_colors[V(time_nets[[i]])$category=="frugivore_granivore"]="green"
+  time_colors[V(time_nets[[i]])$category=="insectivore"]="purple"
+  time_colors[match(V(time_nets[[i]])$name, prim.res_names)]="white"
+  #time_colors[time_colors=="FALSE"]="white"
+  V(time_nets[[i]])$color=time_colors
+}
+```
+
+Now re-plot it with the node colors:
+
+```{r}
+plot(time_nets[[1]], vertex.label="", vertex.color=V(time_nets[[1]])$color)
+```
+
+
+
+Here is a visualization of all 16 of them.
+```{r, fig.height=8}
+par(mfrow=c(4,4), mar=c(1,1,1,1))
+for(i in 1:length(time_nets)){
+  plot(time_nets[[i]], vertex.label="", vertex.color=V(time_nets[[i]])$color, main=colnames(interval_dat)[i])
+}
+```
+
+### 3.3. Calculate foodweb modularity
+
+Based on the foodweb networks we created above, we can measure aspects of the system structure, such as modularity--i.e., the degree to which nodes are clustered together into discrete modules or compartments. 
+
+There are many algorithms to calculate modularity that take different approaches to the computational problem of finding partitions in the network. Many of them are not suited for directed networks (i.e., networks in which relationships are asymmetric--as foodwebs are). Here, we will use one relatively simple method that can handle directed networks: *Community Detection based on Edge Betweenness*. This method is described in one of the earliest papers on modularity, by Newman & Girvan (2004).
+
+```{r}
+time_mods=vector(length=length(time_nets))
+for(i in 1:length(time_nets)){
+  time_mods[i]=modularity(cluster_edge_betweenness(time_nets[[i]], directed=T))
+}
+```
+
+We can plot the change in foodweb modularity across time--Note that here, the time is plotted in reverse order, with most recent interval on the left. This is just because of the way that the time interval data was organized. We will fix this later. But this just illustrates that something is changing across time.
+
+```{r}
+plot(time_mods, type="o", pch=19, xlab="Time intervals (recent to old)", ylab="Food Web Modularity (Edge Betweenness)")
+```
+
+While this seems like a very cool result, there are some nagging challenges to the interpretations of this, since it's not 
+
+
+## 4. Bipartite Networks
+
+### 4.1. Analyzing bipartite consumer-resource networks 
+
+What we did above was to create a directed network from the foodweb matrices. However, there is another type of network--called a "bipartite network"--that is often used in ecological network studies. 
+
+Bipartite networks consist of two types of nodes, and edges only connect nodes of different types. This works well for mutualism networks--for example in plant-pollinator networks, plants only interact directly with pollinators and vice versa. 
+
+```{r}
+##make into bipartite network
+
+interval_dat_list=list()
+for(i in 1:length(time.list)){
+  interval_dat_list[[i]]=data.frame(spp=time.list[[i]]) %>% left_join(., spp_attrs, by=c("spp"="Binomial"))
+}
+interval_dat_list[[1]]
+```
+
+### 4.2. Build Bipartite Network (**NEW**)
+
+In making the bipartite network, there is one interesting question: should omnivores be categorized as "consumer" (i.e., predator) or "resource". Omnivores include things like field mice (Peromyscus spp), which should probably be "resource", as well as bears (Ursus spp.), which should probably be "consumer".
+
+After discussing it a bit, we decided that a way to do this is to have an additional criterion of a "predator/prey ratio" in which we divide the number of predators a species has by the number of prey items it eats. If an omnivore has no or few predators relative to the number of prey items (e.g., bears), then they should be classified as "consumer". But an omnivore that gets eaten by a lot of predators relative to the number of things it eats (e.g., mice) should be classified as "resource". For simplicity, we use the threshold of 1--i.e., if predator/prey ratio < 1, it is classified as "consumer" and if it is >=1, it is classified as "resource". 
+
+Here, we are setting this up by calculating the predator/prey ratio from the global matrix. Then, we add this to the attributes list for the data from each interval. 
+```{r}
+pred.prey.ratio=rowSums(mat)/colSums(mat)
+
+spp_attrs$pred.prey.ratio=pred.prey.ratio[match(spp_attrs$Binomial, names(pred.prey.ratio))]
+  
+for(i in 1:length(interval_dat_list)){
+interval_dat_list[[i]]$pred.prey.ratio=spp_attrs$pred.prey.ratio[match(interval_dat_list[[i]]$spp, spp_attrs$Binomial)]
+}
+```
+
+*This is a code to check that the predator/prey ratio thing makes sense. But don't have to run it.
+```{r, eval=F}
+lapply(interval_dat_list, function(x) table(x$Trophic_Category, x$pred.prey.ratio))
+```
+
+Here, we assign ominvores that have low pred/prey ratio (i.e., have few predators and more prey) as "consumer"
+```{r}
+bipart.mats=list()
+spp_counts=vector()
+for(k in 1:length(time.list)){
+consumer.rows=which(interval_dat_list[[k]]$Trophic_Category=="omnivore"&interval_dat_list[[k]]$pred.prey.ratio<1|interval_dat_list[[k]]$Trophic_Category=="carnivore"|interval_dat_list[[k]]$Trophic_Category=="insectivore")
+
+resource.rows=which(interval_dat_list[[k]]$Trophic_Category=="omnivore"&(interval_dat_list[[k]]$pred.prey.ratio<1)==FALSE | interval_dat_list[[k]]$Trophic_Category=="browser"|interval_dat_list[[k]]$Trophic_Category=="grazer"|interval_dat_list[[k]]$Trophic_Category=="mixed feeder"|interval_dat_list[[k]]$Trophic_Category=="frugivore_granivore")
+
+consumer.spp=interval_dat_list[[k]]$spp[consumer.rows]
+resource.spp=interval_dat_list[[k]]$spp[resource.rows]
+bipart.mats[[k]]=time.mats[[k]][match(resource.spp, rownames(time.mats[[k]])), match(consumer.spp, rownames(time.mats[[k]]))]
+spp_counts[k]=length(consumer.spp)+length(resource.spp)
+}
+```
+
+
+Show the bipartite network for the time interval 1. See that Peromyscus is now correctly assigned as resource. 
+```{r}
+plotweb(bipart.mats[[1]], method="normal",ybig=0.1, arrow="no", col.interaction="black", col.high="tomato", col.low="lightblue",labsize=1,  adj.low=c(1,0), adj.high=c(0,0.5), text.rot = 90, y.lim=c(-1,2.5))
+```
+
+## 5. Calculate NOS
+
+Now, we will use the bipartite network to calculate the *Node Overlap and Segregation* index (Strona & Veech 2015). This index measures how much overlap in 'neighbors' there are between any pair of nodes, and then compares that to the random expectation. 
+
+```{r}
+N_bar=sapply(bipart.mats, function(x) NOS(x)$Nbar)
+plot(N_bar, type="o", pch=19, col="purple", ylab="Average NOS index (undirected)")
+```
+
+
+### 5.1. Building a dataset and plotting it all together
+
+Extract the beginning and end of the time intervals. Add a negative sign so that we can orient the plots correctly from the past to present.
+
+```{r}
+interval.cat=colnames(interval_dat) #the column names from the data set
+interval.start=-as.numeric(str_sub(interval.cat, 1, str_locate(interval.cat, "-")[,1]-1)) #get the start of the interval
+interval.end=-as.numeric(str_sub(interval.cat, str_locate(interval.cat, "-")[,1]+1, str_length(interval.cat)-3)) # get the end of the interval
+```
+
+```{r}
+sum.data=data.frame(interval.name=interval.cat, interval.start=interval.start, interval.end=interval.end, spp.richness=sapply(time.list, length), web.modularity=time_mods, NOS=N_bar) %>%
+  mutate(interval.mid=(interval.start+interval.end)/2)
+sum.data
+```
+
+NOS is negatively correlated with modularity
+```{r}
+cor.test(sum.data$web.modularity, sum.data$NOS,method="spearman")
+```
+Modularity is not correlated with species richness
+```{r}
+cor.test(sum.data$spp.richness, sum.data$web.modularity,method="spearman")
+```
+### 5.2. Plot the modularity and NOS data across time 
+
+This will produce the overlay plot of the modularity and NOS index across time. I've added some shading to aid the visuals. The time intervals as designated in the dataset are shaded in gray. The pale yellow interval is the time interval that corresponds to the beginning of the Holocene (I think). The dots are set at the midpoint of each time interval.
+
+```{r, fig.width=12}
+ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=web.modularity), color="blue") +
+  geom_line(aes(y=web.modularity, color="Modularity")) +
+  geom_point(aes(y=NOS), color="red") +
+  geom_line(aes(y=NOS, color="NOS Index")) +
+  scale_color_manual(values=c("blue", "red")) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Modularity or NOS Index") 
+
+```
+
+## 6. Null model testing of NOS
+
+We had started by trying out the standard null model functions in the `ecosim` package, but we realized that those were not going to work for our purposes. One of the main reasons we were unsatisfied with this is because those procedures simply shuffle the edges around the existing predators and prey within each time interval. However, for our questions, what we are actually interested in is, *what would the foodweb structure look like if we had a different set of predators and prey?*. That is, what if different sets of species had gone extinct or had come in to that system during that time? 
+
+So to test that hypothesis, we are going to use a custom null model by random resampling of predators and prey from the global list. That is:
+
+1. For each time interval, figure out number of predators and prey
+2. In each permutation, randomly pull that number of predators and prey from the set of all predators and prey. 
+3. Calculate NOS 
+4. Repeat x1000
+5. Compare distribution of NOS values from the permutations against the observed NOS value.
+6. Repeat for all time intervals.
+
+
+### 6.1. Null model using random sampling of predators and prey species
+
+Get the list of species and categorize them into consumer vs. resource
+
+First, take the number of predators and prey for each time interval. We can do that from each bipart.mats
+```{r}
+prey.n=sapply(bipart.mats, dim)[1,]
+pred.n=sapply(bipart.mats, dim)[2,]
+```
+
+Get the global set of species that were seen at Halls Cave in ANY time interval:
+```{r}
+all.spp.in.HC=data.frame(spps=unique(unlist(sapply(time.mats, rownames))))
+
+```
+
+Identify which of these species in the global Halls Cave data should be considered "predator/consumer" (carnivores and omnivores) vs. "prey/resource" (browser, grazer, mixed, frugivore/granivore, insectivore) in a bipartate network:
+
+```{r}
+all.consumers=left_join(all.spp.in.HC, spp_attrs, by=join_by("spps"=="Binomial")) %>% filter(Trophic_Category=="omnivore"&pred.prey.ratio<1|Trophic_Category=="carnivore"|Trophic_Category=="insectivore") %>%
+  pull(spps)
+
+all.resources=left_join(all.spp.in.HC, spp_attrs, by=join_by("spps"=="Binomial")) %>% filter(Trophic_Category=="omnivore"&(pred.prey.ratio<1)==FALSE|Trophic_Category=="browser"|Trophic_Category=="grazer"|Trophic_Category=="mixed feeder"|Trophic_Category=="frugivore_granivore") %>%
+  pull(spps)
+```
+
+### 6.2. Building the null model framework:
+
+First, we try making a single randomized network and calculate Nbar
+```{r}
+null.consumers1=sample(all.consumers, size=pred.n[1])
+null.resources1=sample(all.resources, size=prey.n[1])
+nullmat1=mat[match(null.resources1,rownames(mat)), match(null.consumers1,colnames(mat))]
+NOS(nullmat1)$Nbar
+```
+
+Here is how we scale up to get distribution of Nbar values for 1 time step using x100 permutations (not run)
+```{r, eval=F}
+times=100
+Nbar_1=vector(length=times)
+for(i in 1:times){
+  null.consumers1=sample(all.consumers, size=pred.n[1])
+null.resources1=sample(all.resources, size=prey.n[1])
+nullmat1=mat[match(null.resources1,rownames(mat)), match(null.consumers1,colnames(mat))]
+Nbar_1[i]=NOS(nullmat1)$Nbar
+}
+```
+
+Finally, here is how we scale up to get null distribution of Nbar values for all time intervals with x1000 permutations.
+
+```{r}
+null.nos=list()
+
+for (j in 1:length(pred.n)){
+times=1000
+Nbars=vector(length=times)
+for(i in 1:times){
+  null.consumers1=sample(all.consumers, size=pred.n[j])
+null.resources1=sample(all.resources, size=prey.n[j])
+nullmat1=mat[match(null.resources1,rownames(mat)), match(null.consumers1,colnames(mat))]
+Nbars[i]=NOS(nullmat1)$Nbar
+}
+null.nos[[j]]=Nbars
+}
+```
+
+
+### 6.3. Extract the means and 95% confidence intervals of the null model NOS index for each time interval.
+
+
+Use 95% confidence interval instead of using the standard error of the mean
+
+Calculate mean and confidence interval from null distribution of NOS values
+```{r}
+NOS_mean=sapply(null.nos, mean)
+NOS_ci=sapply(null.nos, function(x) quantile(x, probs=c(0.025, 0.975)))
+NOS_ci
+```
+
+Add the mean and lower and upper confidence to the sum.datas
+```{r}
+sum.data$NOS.mean.null=NOS_mean
+sum.data$NOS.lower_ci=unlist(NOS_ci[1,])
+sum.data$NOS.upper_ci=unlist(NOS_ci[2,])
+```
+
+Here, I'm re-plotting the NOS index across time, but this time I have the expected NOS index from null models (r2d method) plotted as black dots with error bars. It looks like the NOS index deviates from expected only after the Holocene...
+
+```{r}
+ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+ geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.25, ymax=Inf, fill="gray", alpha=0.5) +
+ geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=NOS), color="red") +
+  geom_line(aes(y=NOS, color="NOS Index")) +
+  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="black") +
+  #geom_line(aes(y=NOS.mean.null, color="Expected NOS Index")) +
+  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="black") +
+  scale_color_manual(values=c("red")) +
+  theme_cowplot() +
+  theme(legend.position="none") +
+  scale_x_reverse() +
+  labs(color = "Value") +
+  xlab("Time Interval (year before present)") +
+  ylab("NOS Index") 
+```
+
+### 6.4. Calculate P-values for null model test
+
+The observed NOS Index (red line) diverges from the expected NOS values (black points) in the Holocene (until the last two time intervals), suggesting that the mass extinction--and specifically, the identity of what species went extinct--has caused a significant shift from expected level of modularity.
+
+To calculate p-values, we need to first get the observed NOS values:
+
+```{r}
+sum.data$NOS
+```
+
+For a each time interval, we want to ask how many times the NOS value from the randomized community exceeds that of the observed community. We divide this value but the number of iterations (1000) to get the one-tailed P-value. We can double that to get the two-tailed P-value:
+
+So, for time interval 1 (the closest to present):
+```{r}
+(length(which(null.nos[[1]]>sum.data$NOS[1]))/1000)*2
+```
+
+We can use a for loop to do this for all time intervals:
+```{r}
+p.list=list()
+for(i in 1:nrow(sum.data)){
+  p.list[[i]]=(length(which(null.nos[[i]]>sum.data$NOS[i]))/1000)
+}
+unlist(p.list)
+```
+
+Note that these p-values are organized in reverse order. So all of the 8 points in the Holocene are significant (P < 0.05). The transitional time interval is nearly significant (P = 0.076). The Paleocene time intervals are all not significantly different from expected ()
+
+So, ***the food web is significantly less modular (higher NOS, or node overlap) than expected by chance for Time Intervals 2-9 (all of Holocene, excluding the most recent time interval)***
+
+Add this to the sum.data
+
+```{r}
+sum.data$P.value=unlist(p.list)
+```
+
+
+## 7. Climate Over Time
+
+### 7.1. Ensuring column names are read as characters
+
+```{r}
+# The column names are numbers and aren't read correctly, convert the names into "ASCII". This will fix the weird symbols in front of the names
+names(interval_dat) <- iconv(colnames(interval_dat), to = "ASCII", sub = "")
+```
+
+### 7.2 Dataframe of Time and Climate Data
+
+```{r}
+# Create a dataframe of Time and Climate ####
+time.dat = data.frame(Interval_ID=1:16,
+           interval=names(interval_dat),
+           interval.start=interval.start, 
+           interval.end=interval.end,
+           TM = time_mods,
+           SpC = mods_per_bin$Species_Counts, # Making Species counts to add as a column
+           Tavg = climate_dat$Calculated_Average_Temp,
+           Tmax = climate_dat$CCSM_Max_Temp_C,
+           Tmax_SD = climate_dat$CCSM_Max_Temp_SD,
+           Tmin = climate_dat$CCSM_Min_Temp_C,
+           Tmin_SD = climate_dat$CCSM_Min_Temp_SD,
+           Pr = climate_dat$CCSM_Precip_mm,
+           PrCv = climate_dat$CCSM_Precip_CV) %>%
+  mutate(interval.mid=(interval.start+interval.end)/2)
+```
+
+Variables may be auto correlated with Time. To account for any temporal auto correlations, we need to look at the difference between time intervals (ex: Time Interval 1 - Time Interval 2...)
+
+Using the lead() function, we can subtract to get the difference between intervals. Therefore, calculating the change that occurs with a change in modularity over time. 
+
+Note: This ultimately removes a time bin.
+
+### 7.3. Dataframe of the Change
+
+```{r}
+time.dat.change = data.frame(Interval_ID=1:16, 
+                      interval=names(interval_dat),
+                      interval.start=interval.start, 
+                      interval.end=interval.end,
+                      TM.change = time_mods-lead(time_mods),
+                      Tavg.change = climate_dat$Calculated_Average_Temp-lead(climate_dat$Calculated_Average_Temp),
+                      SpC.change = mods_per_bin$Species_Counts-lead(mods_per_bin$Species_Counts),
+                      Pr.change = climate_dat$CCSM_Precip_mm-lead(climate_dat$CCSM_Precip_mm),
+                      Tmax.change = climate_dat$CCSM_Max_Temp_C-lead(climate_dat$CCSM_Max_Temp_C),
+                      Tmax_SD.change = climate_dat$CCSM_Max_Temp_SD-lead(climate_dat$CCSM_Max_Temp_SD),
+                      Tmin.change = climate_dat$CCSM_Min_Temp_C-lead(climate_dat$CCSM_Min_Temp_C),
+                      Tmin_SD.change = climate_dat$CCSM_Min_Temp_SD-lead(climate_dat$CCSM_Min_Temp_SD),
+                      PrCv.change = climate_dat$CCSM_Precip_CV-lead(climate_dat$CCSM_Precip_CV)) %>%
+  mutate(interval.mid=(interval.start+interval.end)/2)
+```
+
+
+### 7.4. Plotting Climate and Modularity
+
+```{r, fig.width=10, fig.height=10}
+
+# Plotting the change in modularity (Δ Modularity) over time
+
+mod.plot = ggplot(data=time.dat.change, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.3, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.3, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.3, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=TM.change), color="black") +
+  geom_line(aes(y=TM.change)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Δ Modularity")+
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+mod.plot
+
+
+# Plotting the change in mean temperature (Δ mean temp) over time
+
+mod.temp.plot = ggplot(data=time.dat.change, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-2.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-2.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-2.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=Tavg.change), color="black") +
+  geom_line(aes(y=Tavg.change)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Δ Mean Temperature (°C)") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+mod.temp.plot
+
+
+# Plotting the change in precipitation (Δ precip) over time
+
+mod.precip.plot = ggplot(data=time.dat.change, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-60, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-60, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-60, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=Pr.change), color="black") +
+  geom_line(aes(y=Pr.change)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Δ Precipitation (mm)")
+
+mod.precip.plot
+
+plot_grid(mod.plot, mod.temp.plot, mod.precip.plot, 
+          nrow = 3,
+          labels = "",
+          label_size = 12,
+          align = "v",
+          rel_heights=c(1,1,1))
+
+# Plotting the change in species richness (Δ spc) over time
+
+mod.spc.plot = ggplot(data=time.dat.change, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-25, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-25, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=SpC.change), color="black") +
+  geom_line(aes(y=SpC.change)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Δ Species Richness")
+
+mod.spc.plot
+
+plot_grid(mod.plot, mod.spc.plot,
+          nrow = 2,
+          labels = "",
+          label_size = 12,
+          align = "v",
+          rel_heights=c(1,1,1))
+
+
+# Plotting the raw modularity (Modularity) over time
+
+mod.raw.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-25, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-25, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=TM), color="black") +
+  geom_line(aes(y=TM)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Modularity") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+mod.raw.plot
+
+
+# Plotting the raw species richness (spc) over time
+
+mod.spcraw.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-25, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-25, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=SpC), color="black") +
+  geom_line(aes(y=SpC)) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Species Richness") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+mod.spcraw.plot
+
+
+mod.nos.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_point(aes(y=web.modularity), color="blue") +
+  geom_line(aes(y=web.modularity, color="Modularity")) +
+  geom_point(aes(y=NOS), color="red") +
+  geom_line(aes(y=NOS, color="NOS Index")) +
+  scale_color_manual(values=c("blue", "red")) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Modularity or NOS Index") +
+  theme(legend.position = "none", axis.text.x=element_blank()) +
+  xlab("")
+
+mod.nos.plot
+
+plot_grid(mod.nos.plot, mod.plot, mod.spcraw.plot, mod.spc.plot,
+          nrow = 4,
+          labels = "",
+          label_size = 5,
+          align = "v",
+          rel_heights=c(1,1,1))
+
+```
+
+## 8. Spearman-Rank Correlations
+
+Spearman-Rank Correlation here is a non-parametric statistical test used to understand how well correlated a relationship between two variables. In this case, we will be testing the relationship between the change in temperature, precipitation, and species richness to the change we see in modularity over time.
+
+```{r plot-wider, fig.width=5, fig.height=7}
+
+par(mfrow=c(3,2), mar=c(1,5,1,5), pty = "s")
+
+cor.test(time.dat.change$Tavg.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Tavg.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$Pr.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Pr.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$Tmax.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Tmax.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$Tmax_SD.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Tmax_SD.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$Tmin.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Tmin.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$Tmin_SD.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$Tmin_SD.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Modularity")
+
+par(mfrow=c(1,1), pty = "s")
+cor.test(time.dat.change$SpC.change, time.dat.change$TM.change, method = "spearman")
+plot(time.dat.change$SpC.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
+
+```
+
+### 8.1. So, what statistic correlates best with modularity? 
+
+```{r}
+key_stats <- c("Tavg.change", "Pr.change", "SpC.change", "Tmax.change", "Tmax_SD.change", "Tmin.change", "Tmin_SD.change");
+spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
+for (ks in 1:length(key_stats)) {
+  spearman_test <- cor.test(time.dat.change[,match(key_stats[ks],colnames(time.dat.change))],time.dat.change$TM.change,method="spearman");
+spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
+spearman_summaries$pvalue[ks] <- spearman_test$p.value;
+if (spearman_summaries$pvalue[ks]>10^-2)  {
+  spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks],3)
+  } else  {
+    spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks]/(10^floor(log10(spearman_summaries$pvalue[ks]))),2)*(10^floor(log10(spearman_summaries$pvalue[ks])))
+  }
+}
+spearman_summaries$rho2 <- spearman_summaries$rho^2;
+
+spearman_summaries
+
+```
+
+As we can see, the strength of associations between temperature, precipitation to modularity is rather weak. Species richness has a weak association but is higher than the climate variables, which is to be expected given that majority of the structural change in Hall's Cave is driven by the LP extinctions.
+
+## 9. Testing Other Correlation Analyses
+
+
+### 9.1. Spearman Partial Correlations
+
+Partial correlations tests the relationship between two variables while controlling for a third variable. Here, we test the correlation between modularity, temperature, precipitation, and species richness while controlling for each variable. *This method allows us to see if the correlation between the first and third  variable is due to the direct correlations between 1 & 2 and 2 & 3*
+
+```{r}
+pcor_1 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$Tavg.change),na.exclude(time.dat.change$Pr.change),method="spearman");
+
+pcor_2 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$Pr.change),na.exclude(time.dat.change$Tavg.change),method="spearman");
+
+pcor_3 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$Tavg.change),na.exclude(time.dat.change$SpC.change),method="spearman");
+
+pcor_4 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$SpC.change),na.exclude(time.dat.change$Tavg.change),method="spearman");
+
+pcor_5 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$Pr.change),na.exclude(time.dat.change$SpC.change),method="spearman");
+
+pcor_6 = pcor.test(na.exclude(time.dat.change$TM.change),na.exclude(time.dat.change$SpC.change),na.exclude(time.dat.change$Pr.change),method="spearman");
+
+pcor_all = data.frame(rbind(pcor_1,pcor_2,pcor_3,pcor_4,pcor_5,pcor_6))
+
+pcor_all$correlation <- c("Mod + Temp - Precip", "Mod + Precip - Temp", "Mod + Temp - Rich", "Mod + Rich - Temp", "Mod + Precip - Rich", 'Mod + Rich - Precip')
+
+pcor_all
+```
+
+### 9.2. Multiple Regression
+
+```{r}
+multiple_regressions_all <- summary(lm(time.dat.change$TM.change ~ (time.dat.change$Tavg.change+time.dat.change$Pr.change+time.dat.change$SpC.change+time.dat.change$Tmax.change+time.dat.change$Tmax_SD.change+time.dat.change$Tmin.change+time.dat.change$Tmin_SD.change)));
+multiple_regressions_all$r.squared;
+multiple_regressions_all$adj.r.squared;
+multiple_regressions_all$coefficients;
+multiple_regressions_all$cov.unscaled;
+
+multiple_regressions_all
+```
+## References:
+
+Newman M. and Girvan M. (2014). Finding and evaluating community structure in networks, Physical Review E 69, 026113
+
+Strona, G., & Veech, J. A. (2015). A new measure of ecological network structure based on node overlap and segregation. Methods in Ecology and Evolution, 6(8), 907-915.
