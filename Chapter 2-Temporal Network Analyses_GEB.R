@@ -228,8 +228,6 @@ plotweb(null.model[[1]][[4]], method="normal",ybig=0.1, arrow="no", col.interact
 plotweb(bipart.mats[[1]], method="normal",ybig=0.1, arrow="no", col.interaction="black", col.high="tomato", col.low="lightblue",labsize=1,  adj.low=c(1,0), adj.high=c(0,0.5), text.rot = 90, y.lim=c(-1,2.5))
 
 
-
-
 # Testing P-Value Distributions ####
 
 #Calculate P-value for the 12th time bin ##
@@ -303,12 +301,6 @@ time.dat.change = data.frame(Interval_ID=1:16,
   mutate(interval.mid=(interval.start+interval.end)/2)
 write.csv(time.dat.change, file = "Quentin&Dai/New_Data/time_dat_change.csv")
 
-  
-
-
-
-
-  
 #run correlation
 par(mfrow=c(1,1), mar=c(1,1,1,1))
 
