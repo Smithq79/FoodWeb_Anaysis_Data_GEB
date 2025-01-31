@@ -592,6 +592,7 @@ connectance.null.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
 
 connectance.null.plot
 ```
+
 ```{r, fig.height=10, fig.width=8}
 
 plot_grid(nos.null.plot, connectance.null.plot, nrow=2, labels = "AUTO", align="v")
