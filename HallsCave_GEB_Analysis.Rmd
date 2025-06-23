@@ -316,6 +316,79 @@ Plot the change in NOS across time.
 *Note that we want to plot the x-axis correctly so that we start with the oldest time interval to the left, and move forward in time to the right, while the x-axis label is in "years before present" (i.e., numbers get larger to the left). To do this, we add a negative sign to the time interval (to make them positive numbers), but reverse the x-axis using the ggplot function `scale_x_reverse()`. 
 
 ```{r, fig.width=12}
+mod.test=ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_line(aes(y=web.modularity), lwd=1.5) +
+  geom_point(aes(y=web.modularity), size=5) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Modularity") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+mod.test
+
+mod.test_2=ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_line(aes(y=web.modularity), lwd=1.5) +
+  geom_point(aes(y=web.modularity), size=5) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Modularity") 
+
+mod.test_2
+```
+
+```{r, fig.width=12}
+nos.test=ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_line(aes(y=NOS), lwd=1.5) +
+  geom_point(aes(y=NOS), size=5) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("NOS") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
+
+nos.test
+
+nos.test_2=ggplot(data=sum.data, aes(x=-interval.mid)) +
+  #geom_vline(xintercept = interval.start, color="gray") +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.5, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_line(aes(y=NOS), lwd=1.5) +
+  geom_point(aes(y=NOS), size=5) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("NOS") 
+
+nos.test_2
+```
+
+```{r, fig.width=12}
+
 mod.nos.plot=ggplot(data=sum.data, aes(x=-interval.mid)) +
   #geom_vline(xintercept = interval.start, color="gray") +
   geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.5, ymax=Inf, fill="gray", alpha=0.5) +
@@ -570,6 +643,25 @@ nos.null.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
   xlab("")
 
 nos.null.plot
+
+nos.null.plot_2 = ggplot(data=sum.data, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.25, ymax=Inf, fill="gray", alpha=0.5) +
+ geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_line(aes(y=NOS, color="NOS Index"), lwd=1.5, color="#B73131") +
+  geom_point(aes(y=NOS), size=5, shape=21, fill="#B73131") +
+  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="black") +
+  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="black") +
+  theme_cowplot() +
+  theme(legend.position="none") +
+  scale_x_reverse() +
+  labs(color = "Value") +
+  xlab("Time Interval (year before present)") +
+  ylab("NOS Index")
+
+nos.null.plot_2
 ```
 
 ```{r}
@@ -588,9 +680,30 @@ connectance.null.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
   scale_x_reverse() +
   labs(color = "Value") +
   xlab("Time Interval (year before present)") +
-  ylab("Connectance") 
+  ylab("Connectance") +
+  theme(axis.text.x=element_blank()) +
+  xlab("")
 
 connectance.null.plot
+
+connectance.null.plot_2 = ggplot(data=sum.data, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.25, ymax=Inf, fill="gray", alpha=0.5) +
+ geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+    geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_point(aes(y=connectance), size=5, shape=21, fill="#B73131") +
+  geom_line(aes(y=connectance, color="NOS Index"), lwd=1.5, color="#B73131") +
+  geom_point(aes(y=connectance.mean.null, color="Expected NOS Index"), color="black") +
+  geom_errorbar(aes(ymin=connectance.lower_ci, ymax=connectance.upper_ci), color="black") +
+  theme_cowplot() +
+  theme(legend.position="none") +
+  scale_x_reverse() +
+  labs(color = "Value") +
+  xlab("Time Interval (year before present)") +
+  ylab("Connectance") 
+
+connectance.null.plot_2
 ```
 
 ```{r, fig.height=10, fig.width=8}
@@ -676,6 +789,20 @@ time.dat = data.frame(Interval_ID=1:16,
   mutate(interval.mid=(interval.start+interval.end)/2)
 ```
 
+Add the Climate Data sum.data
+```{r}
+
+sum.data$Tavg = climate_dat$Calculated_Average_Temp
+sum.data$Tmax = climate_dat$CCSM_Max_Temp_C
+sum.data$Tmax_SD = climate_dat$CCSM_Max_Temp_SD
+sum.data$Tmin = climate_dat$CCSM_Min_Temp_C
+sum.data$Tmin_SD = climate_dat$CCSM_Min_Temp_SD
+sum.data$Pr = climate_dat$CCSM_Precip_mm
+sum.data$PrCv = climate_dat$CCSM_Precip_CV
+
+
+sum.data
+```
 Variables may be auto correlated with Time. To account for any temporal auto correlations, we need to look at the difference between time intervals (ex: Time Interval 1 - Time Interval 2...)
 
 Using the lead() function, we can subtract to get the difference between intervals. Therefore, calculating the change that occurs with a change in modularity over time. 
@@ -689,6 +816,7 @@ time.dat.change = data.frame(Interval_ID=1:16,
                       interval=names(interval_dat),
                       interval.start=interval.start, 
                       interval.end=interval.end,
+                      connectance.change = sum.data$connectance -lead(sum.data$connectance),
                       TM.change = time_mods-lead(time_mods),
                       Tavg.change = climate_dat$Calculated_Average_Temp-lead(climate_dat$Calculated_Average_Temp),
                       SpC.change = spp_count-lead(spp_count),
@@ -701,6 +829,33 @@ time.dat.change = data.frame(Interval_ID=1:16,
   mutate(interval.mid=(interval.start+interval.end)/2)
 ```
 
+Add the Δ Climate Data sum.data
+```{r}
+sum.data$Δspp.richness = spp_count-lead(spp_count)
+
+sum.data$Δweb.modularity = time_mods-lead(time_mods)
+
+sum.data$ΔTavg = climate_dat$Calculated_Average_Temp-lead(climate_dat$Calculated_Average_Temp)
+
+sum.data$ΔTmax = climate_dat$CCSM_Max_Temp_C-lead(climate_dat$CCSM_Max_Temp_C)
+
+sum.data$ΔTmax_SD = climate_dat$CCSM_Max_Temp_SD-lead(climate_dat$CCSM_Max_Temp_SD)
+
+sum.data$ΔTmin = climate_dat$CCSM_Min_Temp_C-lead(climate_dat$CCSM_Min_Temp_C)
+
+sum.data$ΔTmin_SD = climate_dat$CCSM_Min_Temp_SD-lead(climate_dat$CCSM_Min_Temp_SD)
+
+sum.data$ΔPr = climate_dat$CCSM_Precip_mm-lead(climate_dat$CCSM_Precip_mm)
+
+sum.data$ΔPrCv = climate_dat$CCSM_Precip_CV-lead(climate_dat$CCSM_Precip_CV)
+
+sum.data$ΔConnectance = sum.data$connectance-lead(sum.data$connectance)
+
+sum.data$ΔNOS = sum.data$NOS-lead(sum.data$NOS)
+
+
+sum.data
+```
 
 ### 7.4. Plotting Climate and Modularity
 
@@ -725,6 +880,24 @@ temp.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
 
 temp.plot
 
+temp.plot_2 = ggplot(data=time.dat, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-0.3, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-0.3, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.3, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_point(aes(y=Tavg), color="black", size=5) +
+  geom_line(aes(y=Tavg), lwd=1.5) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse()+
+  xlab("Time Interval (year before present)") +
+  ylab("Maximum Temperature (°C)")
+
+temp.plot_2
+
+
+
 ```
 
 ```{r}
@@ -747,6 +920,22 @@ precip.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
   xlab("")
 
 precip.plot
+
+precip.plot_2 = ggplot(data=time.dat, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-60, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-60, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-60, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_point(aes(y=Pr), color="black", size=5) +
+  geom_line(aes(y=Pr), lwd=1.5) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Precipitation (mm)")
+
+precip.plot_2
 ```
 
 
@@ -765,9 +954,27 @@ spcraw.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
   theme_cowplot() +
   scale_x_reverse() +
   xlab("Time Interval (year before present)") +
-  ylab("Species Richness")
+  ylab("Species Richness")+
+  theme(axis.text.x=element_blank()) +
+  xlab("")
 
 spcraw.plot
+
+spcraw.plot_2 = ggplot(data=time.dat, aes(x=-interval.mid)) +
+  geom_rect(xmin=interval.start, xmax=interval.end, ymin=-25, ymax=Inf, fill="gray", alpha=0.5) +
+  geom_rect(xmin=interval.start[9], xmax=interval.end[9], ymin=-25, ymax=Inf, fill="#ffeda0", alpha=0.5) +
+      geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-25, ymax=Inf, fill="#ffc675", alpha=0.5) +
+  geom_vline(xintercept = 950.0, color = "white", size=1.5) +
+  geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
+  geom_point(aes(y=SpC), color="black", size=5) +
+  geom_line(aes(y=SpC), lwd=1.5) +
+  scale_color_manual(values=c("black")) +
+  theme_cowplot() +
+  scale_x_reverse() +
+  xlab("Time Interval (year before present)") +
+  ylab("Species Richness")
+
+spcraw.plot_2
 ```
 
 
@@ -803,69 +1010,12 @@ plot(time.dat.change$Tmin_SD.change, time.dat.change$TM.change, type="p", col="b
 par(mfrow=c(1,1), pty = "s")
 ```
 
+
 Plot the species change vs. modularity change (Figure 4)
 ```{r}
-plot(time.dat.change$SpC.change, time.dat.change$TM.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
+plot(time.dat.change$SpC.change, time.dat.change$connectance.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
 ```
 
-Cleaner versions with ggplot
-
-```{r, fig.height=6, fig.width=4}
-p1=ggplot(time.dat.change, aes(x=Tavg.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Mean Temperature (°C)")
-  
-
-p2=ggplot(time.dat.change, aes(x=Pr.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Precipitation (mm)")
-
-p3=ggplot(time.dat.change, aes(x=Tmax.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Max Temperature (°C)")
-
-p4=ggplot(time.dat.change, aes(x=Tmax_SD.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ SD Max Temperature (°C)")
-
-p5=ggplot(time.dat.change, aes(x=Tmin.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Min Temperature (°C)")
-
-p6=ggplot(time.dat.change, aes(x=Tmin_SD.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ SD Min Temperature (°C)")
-
-
-plot_grid(p1, p2, p3, p4, p5, p6, ncol=2)
-```
-
-
-```{r}
-ggplot(time.dat.change, aes(x=SpC.change, y=TM.change))+
-  geom_point(size=2) +
-  theme_bw() +
-  ylab("Δ Modularity") +
-  xlab("Δ Species Richness")
-```
 
 ### 9.1. So, what statistic correlates best with modularity? 
 
@@ -1010,7 +1160,6 @@ par(mfrow=c(1,1))
 ```
 
 
-
 ```{r,fig.width=10, fig.height=4}
 par(mfrow=c(1,2))
 acf(time.dat$Tavg, main="Temporal Autocorrelation \n Average Temperature")
@@ -1031,6 +1180,343 @@ acf(time.dat$SpC, main="Temporal Autocorrelation \n Species Richness")
 acf(time.dat.change$SpC.change[1:15],  main="Temporal Autocorrelation \n Species Richness - First Difference")
 par(mfrow=c(1,1))
 ```
+
+
+## 11. Testing Reviewer Suggestions
+
+### Collapsing Figures:
+
+#### 11.1. Fig. 3 and 5 - 3 rows, 2 columns - Raw Values Over Time
+```{r, fig.height=10, fig.width=12}
+
+plot_grid(mod.test, spcraw.plot, nos.null.plot, connectance.null.plot, temp.plot_2, precip.plot_2, nrow=3, ncol=2, labels = "AUTO", vjust = 1.3, hjust = -0.2, align="v")
+
+```
+
+#### 11.2. Fig. 4 and 6
+```{r, fig.height=10, fig.width=10}
+par(mfrow=c(3,3), mar=c(5,5,1,5), pty = "s")
+
+plot(sum.data$ΔTavg, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Modularity")
+
+plot(sum.data$ΔPr, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Modularity")
+
+plot(sum.data$ΔTmax, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Modularity")
+
+plot(sum.data$ΔTmax_SD, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Modularity")
+
+plot(sum.data$ΔTmin, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Modularity")
+
+plot(sum.data$ΔTmin_SD, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Modularity")
+
+plot(sum.data$Δspp.richness, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
+
+```
+
+
+#### 11.3. Raw Data: Modularity vs Connectance Correlations and Plots
+```{r}
+par(mfrow=c(1,1), pty = "s")
+
+plot(sum.data$web.modularity, sum.data$connectance, type="p", col="black", pch=16, xlab = "connectance", ylab = "Modularity")
+
+cor.test(sum.data$web.modularity, sum.data$connectance,method="spearman")
+```
+
+1st Difference Data: Δ Modularity vs Δ Connectance Correlations and Plots
+```{r}
+par(mfrow=c(1,1), pty = "s")
+
+plot(time.dat.change$TM.change, time.dat.change$connectance.change, type="p", col="black", pch=16, xlab = "Δ Connectance", ylab = "Δ Modularity")
+
+cor.test(time.dat.change$TM.change, time.dat.change$connectance.change,method="spearman")
+
+```
+When looking at the relationship between Δ Mod and Δ Conn, there is a negative correlation but not significant.
+
+
+#### 11.4. Raw Data: Climate vs Connectance Correlations and Plots
+```{r, fig.height=10, fig.width=10}
+
+par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
+
+plot(sum.data$Tavg, sum.data$connectance, type="p", col="black", pch=16, xlab = "Mean Temperature (°C)", ylab = "Connectance")
+
+plot(sum.data$Pr, sum.data$connectance, type="p", col="black", pch=16, xlab = "Precipitation (mm)", ylab = "Connectance")
+
+plot(sum.data$Tmax, sum.data$connectance, type="p", col="black", pch=16, xlab = "Max Temperature (°C)", ylab = "Connectance")
+
+plot(sum.data$Tmax_SD, sum.data$connectance, type="p", col="black", pch=16, xlab = "Standard Deviation of Max Temperature (°C)", ylab = "Connectance")
+
+plot(sum.data$Tmin, sum.data$connectance, type="p", col="black", pch=16, xlab = "Min Temperature (°C)", ylab = "Connectance")
+
+plot(sum.data$Tmin_SD, sum.data$connectance, type="p", col="black", pch=16, xlab = "Standard Deviation of Min Temperature (°C)", ylab = "Connectance")
+
+plot(sum.data$spp.richness, sum.data$connectance, type="p", col="black", pch=16, xlab = "Species Richness", ylab = "Connectance")
+
+cor.test(sum.data$Tavg, sum.data$connectance,method="spearman");
+cor.test(sum.data$Pr, sum.data$connectance,method="spearman");
+cor.test(sum.data$Tmax, sum.data$connectance,method="spearman");
+cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
+cor.test(sum.data$Tmin, sum.data$connectance,method="spearman");
+cor.test(sum.data$Tmin_SD, sum.data$connectance,method="spearman");
+cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
+cor.test(sum.data$spp.richness, sum.data$connectance,method="spearman");
+
+
+```
+
+
+1st Difference Data: Δ Climate vs Δ Connectance Correlations and Plots
+```{r, fig.height=10, fig.width=10}
+
+par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
+
+plot(sum.data$ΔTavg, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Connectance")
+
+plot(sum.data$ΔPr, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Connectance")
+
+plot(sum.data$ΔTmax, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Connectance")
+
+plot(sum.data$ΔTmax_SD, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Connectance")
+
+plot(sum.data$ΔTmin, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Connectance")
+
+plot(sum.data$ΔTmin_SD, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Connectance")
+
+plot(sum.data$Δspp.richness, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Connectance")
+
+
+
+cor.test(sum.data$ΔTavg, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$ΔPr, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$ΔTmax, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$ΔTmax_SD, sum.data$Δconnectance,method="spearman")
+cor.test(sum.data$ΔTmin, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$ΔTmin_SD, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$ΔTmax_SD, sum.data$ΔConnectance,method="spearman")
+cor.test(sum.data$Δspp.richness, sum.data$ΔConnectance,method="spearman")
+
+```
+
+
+#### 11.5. Raw Data: Climate vs NOS Correlations and Plots
+
+```{r, fig.height=10, fig.width=10}
+
+par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
+
+plot(sum.data$Tavg, sum.data$NOS, type="p", col="black", pch=16, xlab = "Mean Temperature (°C)", ylab = "NOS")
+
+plot(sum.data$Pr, sum.data$NOS, type="p", col="black", pch=16, xlab = "Precipitation (mm)", ylab = "NOS")
+
+plot(sum.data$Tmax, sum.data$NOS, type="p", col="black", pch=16, xlab = "Max Temperature (°C)", ylab = "NOS")
+
+plot(sum.data$Tmax_SD, sum.data$NOS, type="p", col="black", pch=16, xlab = "Standard Deviation of Max Temperature (°C)", ylab = "NOS")
+
+plot(sum.data$Tmin, sum.data$NOS, type="p", col="black", pch=16, xlab = "Min Temperature (°C)", ylab = "NOS")
+
+plot(sum.data$Tmin_SD, sum.data$NOS, type="p", col="black", pch=16, xlab = "Standard Deviation of Min Temperature (°C)", ylab = "NOS")
+
+plot(sum.data$spp.richness, sum.data$NOS, type="p", col="black", pch=16, xlab = "Species Richness", ylab = "NOS")
+
+cor.test(sum.data$Tavg, sum.data$NOS,method="spearman");
+cor.test(sum.data$Pr, sum.data$NOS,method="spearman");
+cor.test(sum.data$Tmax, sum.data$NOS,method="spearman");
+cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
+cor.test(sum.data$Tmin, sum.data$NOS,method="spearman");
+cor.test(sum.data$Tmin_SD, sum.data$NOS,method="spearman");
+cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
+cor.test(sum.data$spp.richness, sum.data$NOS,method="spearman");
+
+```
+
+1st Difference Data: Δ Climate vs Δ NOS Correlations and Plots
+```{r, fig.height=10, fig.width=10}
+
+par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
+
+plot(sum.data$ΔTavg, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ NOS")
+
+plot(sum.data$ΔPr, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ NOS")
+
+plot(sum.data$ΔTmax, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ NOS")
+
+plot(sum.data$ΔTmax_SD, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ NOS")
+
+plot(sum.data$ΔTmin, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ NOS")
+
+plot(sum.data$ΔTmin_SD, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ NOS")
+
+plot(sum.data$Δspp.richness, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ NOS")
+
+
+
+cor.test(sum.data$ΔTavg, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔPr, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔTmax, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔTmax_SD, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔTmin, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔTmin_SD, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$ΔTmax_SD, sum.data$ΔNOS,method="spearman")
+cor.test(sum.data$Δspp.richness, sum.data$ΔNOS,method="spearman")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 12. Cleaning Figures
+
+Cleaner Figures with ggplot
+
+Raw:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(sum.data, aes(x=Tavg, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Mean Temperature (°C)")
+  
+
+p2=ggplot(time.dat.change, aes(x=Pr.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Precipitation (mm)")
+
+p3=ggplot(time.dat.change, aes(x=Tmax.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Max Temperature (°C)")
+
+p4=ggplot(time.dat.change, aes(x=Tmax_SD.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ SD Max Temperature (°C)")
+
+p5=ggplot(time.dat.change, aes(x=Tmin.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Min Temperature (°C)")
+
+p6=ggplot(time.dat.change, aes(x=Tmin_SD.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ SD Min Temperature (°C)")
+
+p7=ggplot(time.dat.change, aes(x=SpC.change, y=web.modularity))+
+  geom_point(size=2) +
+  theme_bw() +
+  ylab("Δ Modularity") +
+  xlab("Δ Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
+
+
+
+
+
+1st Diff:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(time.dat.change, aes(x=Tavg.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Mean Temperature (°C)")
+  
+
+p2=ggplot(time.dat.change, aes(x=Pr.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Precipitation (mm)")
+
+p3=ggplot(time.dat.change, aes(x=Tmax.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Max Temperature (°C)")
+
+p4=ggplot(time.dat.change, aes(x=Tmax_SD.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ SD Max Temperature (°C)")
+
+p5=ggplot(time.dat.change, aes(x=Tmin.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ Min Temperature (°C)")
+
+p6=ggplot(time.dat.change, aes(x=Tmin_SD.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Modularity") +
+  xlab("Δ SD Min Temperature (°C)")
+
+p7=ggplot(time.dat.change, aes(x=SpC.change, y=TM.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  ylab("Δ Modularity") +
+  xlab("Δ Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
+
+
+
+
+
 ## References:
 
 Newman M. and Girvan M. (2014). Finding and evaluating community structure in networks, Physical Review E 69, 026113
