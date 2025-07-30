@@ -32,6 +32,8 @@ library(ppcor)
 library(forcats)
 library(dplyr)
 library(viridisLite)
+library(xlsx)
+library(Hmisc)
 ```
 
 
@@ -183,6 +185,46 @@ for(i in 1:length(time_nets)){
 }
 ```
 
+```{r, fig.height=10, fig.width=10}
+plot(time_nets[[1]], vertex.label.cex=0.4, vertex.label.color="red", vertex.color=V(time_nets[[1]])$color,  main=colnames(interval_dat[1]))
+
+plot(time_nets[[9]], vertex.label="", vertex.color=V(time_nets[[9]])$color,  main=colnames(interval_dat[9]))
+
+plot(time_nets[[16]], vertex.label="", vertex.color=V(time_nets[[16]])$color, main=colnames(interval_dat[16]))
+
+plot(time_nets[[16]], vertex.label.cex=0.4, vertex.label.color="black", vertex.color=V(time_nets[[16]])$color,  main="Pleistocene (20752-20988 ybp)")
+plot(time_nets[[9]], vertex.label="", vertex.color=V(time_nets[[9]])$color,  main="Holocene (11339-12656 ybp)")
+plot(time_nets[[1]], vertex.label="", vertex.color=V(time_nets[[1]])$color,  main="Modern Holocene (0-1128 ybp)")
+
+plot(time_nets[[13]], vertex.label="", vertex.color=V(time_nets[[13]])$color,  main="Pleistocene (17216-18159 ybp)")
+plot(time_nets[[10]], vertex.label.cex=0.4, vertex.label.color="black", vertex.color=V(time_nets[[10]])$color,  main="Pleistocene (12986-14623 ybp)")
+```
+
+
+```{r, fig.height=5, fig.width=8}
+par(mfrow=c(1,3), mar=c(1,1,1,1))
+
+plot(time_nets[[1]], vertex.label="", vertex.color=V(time_nets[[1]])$color,  main="Modern Holocene (0-1128 ybp)")
+plot(time_nets[[10]], vertex.label="", vertex.color=V(time_nets[[10]])$color,  main="Pleistocene (12986-14623 ybp)")
+
+
+
+```
+
+### 3.2.2 Plot the networks with modules identified
+
+Here are figures where we label the modules with bubbles. I shrank the arrow sizes even more because they were making the bubbles hard to see. 
+```{r, fig.height=8, fig.width=8}
+comms=list()
+for(i in 1:length(time_nets)){
+  comms[[i]]=cluster_edge_betweenness(time_nets[[i]], directed=T)
+}
+
+par(mfrow=c(4,4), mar=c(1,1,1,3))
+for(i in 1:length(time_nets)){
+  plot(comms[[i]], time_nets[[i]], vertex.label="",  main=colnames(interval_dat)[i], edge.color=gray(0.5), mark.col=gray(0.8, alpha=0.5), mark.border="black", edge.arrow.size=0.5, edge.arrow.width=0.7, col=V(time_nets[[i]])$color)
+}
+```
 
 ### 3.3. Calculate foodweb modularity
 
@@ -629,10 +671,10 @@ nos.null.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
     geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
   geom_vline(xintercept = 950.0, color = "white", size=1.5) +
   geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
-  geom_line(aes(y=NOS, color="NOS Index"), lwd=1.5, color="#B73131") +
-  geom_point(aes(y=NOS), size=5, shape=21, fill="#B73131") +
-  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="black") +
-  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="black") +
+  geom_line(aes(y=NOS, color="NOS Index"), lwd=1.5, color="black") +
+  geom_point(aes(y=NOS), size=5, shape=21, fill="black") +
+  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="#B73131") +
+  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="#B73131") +
   theme_cowplot() +
   theme(legend.position="none") +
   scale_x_reverse() +
@@ -650,10 +692,10 @@ nos.null.plot_2 = ggplot(data=sum.data, aes(x=-interval.mid)) +
     geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
   geom_vline(xintercept = 950.0, color = "white", size=1.5) +
   geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
-  geom_line(aes(y=NOS, color="NOS Index"), lwd=1.5, color="#B73131") +
-  geom_point(aes(y=NOS), size=5, shape=21, fill="#B73131") +
-  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="black") +
-  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="black") +
+  geom_line(aes(y=NOS, color="NOS Index"), lwd=1.5, color="black") +
+  geom_point(aes(y=NOS), size=5, shape=21, fill="black") +
+  geom_point(aes(y=NOS.mean.null, color="Expected NOS Index"), color="#B73131") +
+  geom_errorbar(aes(ymin=NOS.lower_ci, ymax=NOS.upper_ci), color="#B73131") +
   theme_cowplot() +
   theme(legend.position="none") +
   scale_x_reverse() +
@@ -671,10 +713,10 @@ connectance.null.plot = ggplot(data=sum.data, aes(x=-interval.mid)) +
     geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
   geom_vline(xintercept = 950.0, color = "white", size=1.5) +
   geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
-  geom_point(aes(y=connectance), size=5, shape=21, fill="#B73131") +
-  geom_line(aes(y=connectance, color="NOS Index"), lwd=1.5, color="#B73131") +
-  geom_point(aes(y=connectance.mean.null, color="Expected NOS Index"), color="black") +
-  geom_errorbar(aes(ymin=connectance.lower_ci, ymax=connectance.upper_ci), color="black") +
+  geom_point(aes(y=connectance), size=5, shape=21, fill="black") +
+  geom_line(aes(y=connectance, color="NOS Index"), lwd=1.5, color="black") +
+  geom_point(aes(y=connectance.mean.null, color="Expected NOS Index"), color="#B73131") +
+  geom_errorbar(aes(ymin=connectance.lower_ci, ymax=connectance.upper_ci), color="#B73131") +
   theme_cowplot() +
   theme(legend.position="none") +
   scale_x_reverse() +
@@ -692,10 +734,10 @@ connectance.null.plot_2 = ggplot(data=sum.data, aes(x=-interval.mid)) +
     geom_rect(xmin=interval.start[11], xmax=interval.end[11], ymin=-0.5, ymax=Inf, fill="#ffc675", alpha=0.5) +
   geom_vline(xintercept = 950.0, color = "white", size=1.5) +
   geom_vline(xintercept = 1700.0, color = "white", size=1.5) +
-  geom_point(aes(y=connectance), size=5, shape=21, fill="#B73131") +
-  geom_line(aes(y=connectance, color="NOS Index"), lwd=1.5, color="#B73131") +
-  geom_point(aes(y=connectance.mean.null, color="Expected NOS Index"), color="black") +
-  geom_errorbar(aes(ymin=connectance.lower_ci, ymax=connectance.upper_ci), color="black") +
+  geom_point(aes(y=connectance), size=5, shape=21, fill="black") +
+  geom_line(aes(y=connectance, color="NOS Index"), lwd=1.5, color="black") +
+  geom_point(aes(y=connectance.mean.null, color="Expected NOS Index"), color="#B73131") +
+  geom_errorbar(aes(ymin=connectance.lower_ci, ymax=connectance.upper_ci), color="#B73131") +
   theme_cowplot() +
   theme(legend.position="none") +
   scale_x_reverse() +
@@ -706,7 +748,7 @@ connectance.null.plot_2 = ggplot(data=sum.data, aes(x=-interval.mid)) +
 connectance.null.plot_2
 ```
 
-```{r, fig.height=10, fig.width=8}
+```{r, fig.height=15, fig.width=8}
 
 plot_grid(nos.null.plot, connectance.null.plot, nrow=2, labels = "AUTO", align="v")
 
@@ -831,27 +873,27 @@ time.dat.change = data.frame(Interval_ID=1:16,
 
 Add the Δ Climate Data sum.data
 ```{r}
-sum.data$Δspp.richness = spp_count-lead(spp_count)
+sum.data$spp.richness.change = spp_count-lead(spp_count)
 
-sum.data$Δweb.modularity = time_mods-lead(time_mods)
+sum.data$web.modularity.change = time_mods-lead(time_mods)
 
-sum.data$ΔTavg = climate_dat$Calculated_Average_Temp-lead(climate_dat$Calculated_Average_Temp)
+sum.data$Tavg.change = climate_dat$Calculated_Average_Temp-lead(climate_dat$Calculated_Average_Temp)
 
-sum.data$ΔTmax = climate_dat$CCSM_Max_Temp_C-lead(climate_dat$CCSM_Max_Temp_C)
+sum.data$Tmax.change = climate_dat$CCSM_Max_Temp_C-lead(climate_dat$CCSM_Max_Temp_C)
 
-sum.data$ΔTmax_SD = climate_dat$CCSM_Max_Temp_SD-lead(climate_dat$CCSM_Max_Temp_SD)
+sum.data$Tmax_SD.change = climate_dat$CCSM_Max_Temp_SD-lead(climate_dat$CCSM_Max_Temp_SD)
 
-sum.data$ΔTmin = climate_dat$CCSM_Min_Temp_C-lead(climate_dat$CCSM_Min_Temp_C)
+sum.data$Tmin.change = climate_dat$CCSM_Min_Temp_C-lead(climate_dat$CCSM_Min_Temp_C)
 
-sum.data$ΔTmin_SD = climate_dat$CCSM_Min_Temp_SD-lead(climate_dat$CCSM_Min_Temp_SD)
+sum.data$Tmin_SD.change = climate_dat$CCSM_Min_Temp_SD-lead(climate_dat$CCSM_Min_Temp_SD)
 
-sum.data$ΔPr = climate_dat$CCSM_Precip_mm-lead(climate_dat$CCSM_Precip_mm)
+sum.data$Pr.change = climate_dat$CCSM_Precip_mm-lead(climate_dat$CCSM_Precip_mm)
 
-sum.data$ΔPrCv = climate_dat$CCSM_Precip_CV-lead(climate_dat$CCSM_Precip_CV)
+sum.data$PrCv.change = climate_dat$CCSM_Precip_CV-lead(climate_dat$CCSM_Precip_CV)
 
-sum.data$ΔConnectance = sum.data$connectance-lead(sum.data$connectance)
+sum.data$Connectance.change = sum.data$connectance-lead(sum.data$connectance)
 
-sum.data$ΔNOS = sum.data$NOS-lead(sum.data$NOS)
+sum.data$NOS.change = sum.data$NOS-lead(sum.data$NOS)
 
 
 sum.data
@@ -874,7 +916,7 @@ temp.plot = ggplot(data=time.dat, aes(x=-interval.mid)) +
   theme_cowplot() +
   scale_x_reverse()+
   xlab("Time Interval (year before present)") +
-  ylab("Maximum Temperature (°C)")+
+  ylab("Mean Temperature (°C)")+
   theme(axis.text.x=element_blank()) +
   xlab("")
 
@@ -892,7 +934,7 @@ temp.plot_2 = ggplot(data=time.dat, aes(x=-interval.mid)) +
   theme_cowplot() +
   scale_x_reverse()+
   xlab("Time Interval (year before present)") +
-  ylab("Maximum Temperature (°C)")
+  ylab("Mean Temperature (°C)")
 
 temp.plot_2
 
@@ -1021,10 +1063,10 @@ plot(time.dat.change$SpC.change, time.dat.change$connectance.change, type="p", c
 
 Run spearman correlations and arrange results into table.
 ```{r}
-key_stats <- c("Tavg.change", "Pr.change", "SpC.change", "Tmax.change", "Tmax_SD.change", "Tmin.change", "Tmin_SD.change");
+key_stats <- c("Tavg.change", "Pr.change", "Tmax.change", "Tmax_SD.change", "Tmin.change", "Tmin_SD.change", "spp.richness.change");
 spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
 for (ks in 1:length(key_stats)) {
-  spearman_test <- cor.test(time.dat.change[,match(key_stats[ks],colnames(time.dat.change))],time.dat.change$TM.change,method="spearman");
+  spearman_test <- cor.test(sum.data[,match(key_stats[ks],colnames(sum.data))],sum.data$web.modularity.change,method="spearman");
 spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
 spearman_summaries$pvalue[ks] <- spearman_test$p.value;
 if (spearman_summaries$pvalue[ks]>10^-2)  {
@@ -1036,7 +1078,12 @@ if (spearman_summaries$pvalue[ks]>10^-2)  {
 spearman_summaries$rho2 <- spearman_summaries$rho^2;
 
 spearman_summaries
+```
 
+Export as an excel file
+```{r}
+# write.xlsx(spearman_summaries, file = "Supplemental Data/Spearman_Correlations.xlsx",
+#       sheetName = "Climate v Mod", append = FALSE)
 ```
 
 As we can see, the strength of associations between temperature, precipitation to modularity is rather weak. Species richness has a weak association but is higher than the climate variables, which is to be expected given that majority of the structural change in Hall's Cave is driven by the LP extinctions.
@@ -1066,6 +1113,13 @@ pcor_all$correlation <- c("Mod + Temp - Precip", "Mod + Precip - Temp", "Mod + T
 
 pcor_all
 ```
+
+Export as an excel file
+```{r}
+#write.xlsx(spearman_summaries, file = "Supplemental Data/Supplemental_Analyses.xlsx",
+      #sheetName = "Partial Correlations", append = FALSE)
+```
+
 
 ### 10.2. Multiple Regression
 
@@ -1186,35 +1240,39 @@ par(mfrow=c(1,1))
 
 ### Collapsing Figures:
 
-#### 11.1. Fig. 3 and 5 - 3 rows, 2 columns - Raw Values Over Time
+#### 11.1. Plotting Variables
+
+Fig. 3 and 5 (3 rows, 2 columns) - Raw Values Over Time
 ```{r, fig.height=10, fig.width=12}
 
-plot_grid(mod.test, spcraw.plot, nos.null.plot, connectance.null.plot, temp.plot_2, precip.plot_2, nrow=3, ncol=2, labels = "AUTO", vjust = 1.3, hjust = -0.2, align="v")
+plot_grid(mod.test, spcraw.plot, nos.null.plot, temp.plot, connectance.null.plot_2, precip.plot_2, nrow=3, ncol=2, labels = "AUTO", vjust = 1.3, hjust = -0.2, align="v")
 
 ```
 
-#### 11.2. Fig. 4 and 6
+Fig. 4 and 6
 ```{r, fig.height=10, fig.width=10}
 par(mfrow=c(3,3), mar=c(5,5,1,5), pty = "s")
 
-plot(sum.data$ΔTavg, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Modularity")
+plot(sum.data$Tavg.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Modularity")
 
-plot(sum.data$ΔPr, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Modularity")
+plot(sum.data$Pr.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Modularity")
 
-plot(sum.data$ΔTmax, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Modularity")
+plot(sum.data$Tmax.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Modularity")
 
-plot(sum.data$ΔTmax_SD, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Modularity")
+plot(sum.data$Tmax_SD.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Modularity")
 
-plot(sum.data$ΔTmin, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Modularity")
+plot(sum.data$Tmin.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Modularity")
 
-plot(sum.data$ΔTmin_SD, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Modularity")
+plot(sum.data$Tmin_SD.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Modularity")
 
-plot(sum.data$Δspp.richness, sum.data$Δweb.modularity, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
+plot(sum.data$spp.richness.change, sum.data$web.modularity.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Modularity")
 
 ```
 
 
-#### 11.3. Raw Data: Modularity vs Connectance Correlations and Plots
+#### 11.2. Modularity vs Connectance Correlations
+
+Raw Data: Modularity vs Connectance Correlations and Plots
 ```{r}
 par(mfrow=c(1,1), pty = "s")
 
@@ -1227,15 +1285,17 @@ cor.test(sum.data$web.modularity, sum.data$connectance,method="spearman")
 ```{r}
 par(mfrow=c(1,1), pty = "s")
 
-plot(time.dat.change$TM.change, time.dat.change$connectance.change, type="p", col="black", pch=16, xlab = "Δ Connectance", ylab = "Δ Modularity")
+plot(sum.data$web.modularity.change, sum.data$connectance.change, type="p", col="black", pch=16, xlab = "Δ Connectance", ylab = "Δ Modularity")
 
-cor.test(time.dat.change$TM.change, time.dat.change$connectance.change,method="spearman")
+cor.test(sum.data$web.modularity.change, sum.data$Connectance.change,method="spearman")
 
 ```
 When looking at the relationship between Δ Mod and Δ Conn, there is a negative correlation but not significant.
 
 
-#### 11.4. Raw Data: Climate vs Connectance Correlations and Plots
+#### 11.3. Climate vs Connectance Correlations
+
+Raw Data: Climate vs Connectance Correlations and Plots
 ```{r, fig.height=10, fig.width=10}
 
 par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
@@ -1254,16 +1314,33 @@ plot(sum.data$Tmin_SD, sum.data$connectance, type="p", col="black", pch=16, xlab
 
 plot(sum.data$spp.richness, sum.data$connectance, type="p", col="black", pch=16, xlab = "Species Richness", ylab = "Connectance")
 
-cor.test(sum.data$Tavg, sum.data$connectance,method="spearman");
-cor.test(sum.data$Pr, sum.data$connectance,method="spearman");
-cor.test(sum.data$Tmax, sum.data$connectance,method="spearman");
-cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
-cor.test(sum.data$Tmin, sum.data$connectance,method="spearman");
-cor.test(sum.data$Tmin_SD, sum.data$connectance,method="spearman");
-cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
-cor.test(sum.data$spp.richness, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tavg, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Pr, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tmax, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tmin, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tmin_SD, sum.data$connectance,method="spearman");
+# cor.test(sum.data$Tmax_SD, sum.data$connectance,method="spearman");
+# cor.test(sum.data$spp.richness, sum.data$connectance,method="spearman");
+```
 
+Run spearman correlations and arrange results into table.
+```{r}
+key_stats <- c("Tavg", "Pr", "Tmax", "Tmax_SD", "Tmin", "Tmin_SD", "spp.richness");
+spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
+for (ks in 1:length(key_stats)) {
+  spearman_test <- cor.test(sum.data[,match(key_stats[ks],colnames(sum.data))],sum.data$connectance,method="spearman");
+spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
+spearman_summaries$pvalue[ks] <- spearman_test$p.value;
+if (spearman_summaries$pvalue[ks]>10^-2)  {
+  spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks],3)
+  } else  {
+    spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks]/(10^floor(log10(spearman_summaries$pvalue[ks]))),2)*(10^floor(log10(spearman_summaries$pvalue[ks])))
+  }
+}
+spearman_summaries$rho2 <- spearman_summaries$rho^2;
 
+spearman_summaries
 ```
 
 
@@ -1272,35 +1349,60 @@ cor.test(sum.data$spp.richness, sum.data$connectance,method="spearman");
 
 par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
 
-plot(sum.data$ΔTavg, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Connectance")
+plot(sum.data$Tavg.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ Connectance")
 
-plot(sum.data$ΔPr, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Connectance")
+plot(sum.data$Pr.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ Connectance")
 
-plot(sum.data$ΔTmax, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Connectance")
+plot(sum.data$Tmax.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ Connectance")
 
-plot(sum.data$ΔTmax_SD, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Connectance")
+plot(sum.data$Tmax_SD.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ Connectance")
 
-plot(sum.data$ΔTmin, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Connectance")
+plot(sum.data$Tmin.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ Connectance")
 
-plot(sum.data$ΔTmin_SD, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Connectance")
+plot(sum.data$Tmin_SD.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ Connectance")
 
-plot(sum.data$Δspp.richness, sum.data$ΔConnectance, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Connectance")
+plot(sum.data$spp.richness.change, sum.data$Connectance.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ Connectance")
 
 
 
-cor.test(sum.data$ΔTavg, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$ΔPr, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$ΔTmax, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$ΔTmax_SD, sum.data$Δconnectance,method="spearman")
-cor.test(sum.data$ΔTmin, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$ΔTmin_SD, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$ΔTmax_SD, sum.data$ΔConnectance,method="spearman")
-cor.test(sum.data$Δspp.richness, sum.data$ΔConnectance,method="spearman")
-
+# cor.test(sum.data$Tavg.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Pr.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Tmax.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Tmax_SD.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Tmin.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Tmin_SD.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$Tmax_SD.change, sum.data$Connectance.change,method="spearman")
+# cor.test(sum.data$spp.richness.change, sum.data$Connectance.change,method="spearman")
 ```
 
+Run spearman correlations and arrange results into table.
+```{r}
+key_stats <- c("Tavg.change", "Pr.change", "Tmax.change", "Tmax_SD.change", "Tmin.change", "Tmin_SD.change", "spp.richness.change");
+spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
+for (ks in 1:length(key_stats)) {
+  spearman_test <- cor.test(sum.data[,match(key_stats[ks],colnames(sum.data))],sum.data$Connectance.change,method="spearman");
+spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
+spearman_summaries$pvalue[ks] <- spearman_test$p.value;
+if (spearman_summaries$pvalue[ks]>10^-2)  {
+  spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks],3)
+  } else  {
+    spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks]/(10^floor(log10(spearman_summaries$pvalue[ks]))),2)*(10^floor(log10(spearman_summaries$pvalue[ks])))
+  }
+}
+spearman_summaries$rho2 <- spearman_summaries$rho^2;
 
-#### 11.5. Raw Data: Climate vs NOS Correlations and Plots
+spearman_summaries
+```
+
+Export as an excel file that adds to the file
+```{r}
+# write.xlsx(spearman_summaries, file = "Supplemental Data/Spearman_Correlations.xlsx",
+#       sheetName = "Climate v Con", append = TRUE)
+```
+
+#### 11.4. Climate vs NOS Correlations
+
+Raw Data: Climate vs NOS Correlations and Plots
 
 ```{r, fig.height=10, fig.width=10}
 
@@ -1320,80 +1422,89 @@ plot(sum.data$Tmin_SD, sum.data$NOS, type="p", col="black", pch=16, xlab = "Stan
 
 plot(sum.data$spp.richness, sum.data$NOS, type="p", col="black", pch=16, xlab = "Species Richness", ylab = "NOS")
 
-cor.test(sum.data$Tavg, sum.data$NOS,method="spearman");
-cor.test(sum.data$Pr, sum.data$NOS,method="spearman");
-cor.test(sum.data$Tmax, sum.data$NOS,method="spearman");
-cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
-cor.test(sum.data$Tmin, sum.data$NOS,method="spearman");
-cor.test(sum.data$Tmin_SD, sum.data$NOS,method="spearman");
-cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
-cor.test(sum.data$spp.richness, sum.data$NOS,method="spearman");
-
+# cor.test(sum.data$Tavg, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Pr, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Tmax, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Tmin, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Tmin_SD, sum.data$NOS,method="spearman");
+# cor.test(sum.data$Tmax_SD, sum.data$NOS,method="spearman");
+# cor.test(sum.data$spp.richness, sum.data$NOS,method="spearman");
 ```
+
+Run spearman correlations and arrange results into table.
+```{r}
+key_stats <- c("Tavg", "Pr", "Tmax", "Tmax_SD", "Tmin", "Tmin_SD", "spp.richness");
+spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
+for (ks in 1:length(key_stats)) {
+  spearman_test <- cor.test(sum.data[,match(key_stats[ks],colnames(sum.data))],sum.data$NOS,method="spearman");
+spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
+spearman_summaries$pvalue[ks] <- spearman_test$p.value;
+if (spearman_summaries$pvalue[ks]>10^-2)  {
+  spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks],3)
+  } else  {
+    spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks]/(10^floor(log10(spearman_summaries$pvalue[ks]))),2)*(10^floor(log10(spearman_summaries$pvalue[ks])))
+  }
+}
+spearman_summaries$rho2 <- spearman_summaries$rho^2;
+
+spearman_summaries
+```
+
 
 1st Difference Data: Δ Climate vs Δ NOS Correlations and Plots
 ```{r, fig.height=10, fig.width=10}
 
 par(mfrow=c(3,3), mar=c(5,5,5,5), pty = "s")
 
-plot(sum.data$ΔTavg, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ NOS")
+plot(sum.data$Tavg.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Mean Temperature (°C)", ylab = "Δ NOS")
 
-plot(sum.data$ΔPr, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ NOS")
+plot(sum.data$Pr.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Precipitation (mm)", ylab = "Δ NOS")
 
-plot(sum.data$ΔTmax, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ NOS")
+plot(sum.data$Tmax.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Max Temperature (°C)", ylab = "Δ NOS")
 
-plot(sum.data$ΔTmax_SD, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ NOS")
+plot(sum.data$Tmax_SD.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Max Temperature (°C)", ylab = "Δ NOS")
 
-plot(sum.data$ΔTmin, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ NOS")
+plot(sum.data$Tmin.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Min Temperature (°C)", ylab = "Δ NOS")
 
-plot(sum.data$ΔTmin_SD, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ NOS")
+plot(sum.data$Tmin_SD.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Standard Deviation of Min Temperature (°C)", ylab = "Δ NOS")
 
-plot(sum.data$Δspp.richness, sum.data$ΔNOS, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ NOS")
+plot(sum.data$spp.richness.change, sum.data$NOS.change, type="p", col="black", pch=16, xlab = "Δ Species Richness", ylab = "Δ NOS")
 
-
-
-cor.test(sum.data$ΔTavg, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔPr, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔTmax, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔTmax_SD, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔTmin, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔTmin_SD, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$ΔTmax_SD, sum.data$ΔNOS,method="spearman")
-cor.test(sum.data$Δspp.richness, sum.data$ΔNOS,method="spearman")
-
+# cor.test(sum.data$Tavg.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Pr.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Tmax.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Tmax_SD.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Tmin.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Tmin_SD.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$Tmax_SD.change, sum.data$NOS.change,method="spearman")
+# cor.test(sum.data$spp.richness.change, sum.data$NOS.change,method="spearman")
 ```
 
+Run spearman correlations and arrange results into table.
+```{r}
+key_stats <- c("Tavg.change", "Pr.change", "Tmax.change", "Tmax_SD.change", "Tmin.change", "Tmin_SD.change", "spp.richness.change");
+spearman_summaries <- data.frame(stat=as.character(key_stats),rho=as.numeric(rep(0,length(key_stats))),pvalue=as.numeric(rep(0,length(key_stats))));
+for (ks in 1:length(key_stats)) {
+  spearman_test <- cor.test(sum.data[,match(key_stats[ks],colnames(sum.data))],sum.data$NOS.change,method="spearman");
+spearman_summaries$rho[ks] <- round(spearman_test$estimate,3);
+spearman_summaries$pvalue[ks] <- spearman_test$p.value;
+if (spearman_summaries$pvalue[ks]>10^-2)  {
+  spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks],3)
+  } else  {
+    spearman_summaries$pvalue[ks] <- round(spearman_summaries$pvalue[ks]/(10^floor(log10(spearman_summaries$pvalue[ks]))),2)*(10^floor(log10(spearman_summaries$pvalue[ks])))
+  }
+}
+spearman_summaries$rho2 <- spearman_summaries$rho^2;
 
+spearman_summaries
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Export as an excel file that adds to the file
+```{r}
+# write.xlsx(spearman_summaries, file = "Supplemental Data/Spearman_Correlations.xlsx",
+#       sheetName = "Climate v NOS", append = TRUE)
+```
 
 ## 12. Cleaning Figures
 
@@ -1405,62 +1516,59 @@ p1=ggplot(sum.data, aes(x=Tavg, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Mean Temperature (°C)")
+  ylab("Modularity") +
+  xlab("Mean Temperature (°C)")
   
 
-p2=ggplot(time.dat.change, aes(x=Pr.change, y=web.modularity))+
+p2=ggplot(sum.data, aes(x=Pr, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Precipitation (mm)")
+  ylab("Modularity") +
+  xlab("Precipitation (mm)")
 
-p3=ggplot(time.dat.change, aes(x=Tmax.change, y=web.modularity))+
+p3=ggplot(sum.data, aes(x=Tmax, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Max Temperature (°C)")
+  ylab("Modularity") +
+  xlab("Max Temperature (°C)")
 
-p4=ggplot(time.dat.change, aes(x=Tmax_SD.change, y=web.modularity))+
+p4=ggplot(sum.data, aes(x=Tmax_SD, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ SD Max Temperature (°C)")
+  ylab("Modularity") +
+  xlab("SD Max Temperature (°C)")
 
-p5=ggplot(time.dat.change, aes(x=Tmin.change, y=web.modularity))+
+p5=ggplot(sum.data, aes(x=Tmin, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ Min Temperature (°C)")
+  ylab("Modularity") +
+  xlab("Min Temperature (°C)")
 
-p6=ggplot(time.dat.change, aes(x=Tmin_SD.change, y=web.modularity))+
+p6=ggplot(sum.data, aes(x=Tmin_SD, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
-  ylab("Δ Modularity") +
-  xlab("Δ SD Min Temperature (°C)")
+  ylab("Modularity") +
+  xlab("SD Min Temperature (°C)")
 
-p7=ggplot(time.dat.change, aes(x=SpC.change, y=web.modularity))+
+p7=ggplot(sum.data, aes(x=spp.richness, y=web.modularity))+
   geom_point(size=2) +
   theme_bw() +
-  ylab("Δ Modularity") +
-  xlab("Δ Species Richness")
+  theme(axis.title=element_text(size=9)) +
+  ylab("Modularity") +
+  xlab("Species Richness")
   
   
 plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
 ```
-
-
-
-
 
 1st Diff:
 ```{r, fig.height=6, fig.width=4}
-p1=ggplot(time.dat.change, aes(x=Tavg.change, y=TM.change))+
+p1=ggplot(sum.data, aes(x=Tavg.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
@@ -1468,44 +1576,45 @@ p1=ggplot(time.dat.change, aes(x=Tavg.change, y=TM.change))+
   xlab("Δ Mean Temperature (°C)")
   
 
-p2=ggplot(time.dat.change, aes(x=Pr.change, y=TM.change))+
+p2=ggplot(sum.data, aes(x=Pr.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ Precipitation (mm)")
 
-p3=ggplot(time.dat.change, aes(x=Tmax.change, y=TM.change))+
+p3=ggplot(sum.data, aes(x=Tmax.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ Max Temperature (°C)")
 
-p4=ggplot(time.dat.change, aes(x=Tmax_SD.change, y=TM.change))+
+p4=ggplot(sum.data, aes(x=Tmax_SD.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ SD Max Temperature (°C)")
 
-p5=ggplot(time.dat.change, aes(x=Tmin.change, y=TM.change))+
+p5=ggplot(sum.data, aes(x=Tmin.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ Min Temperature (°C)")
 
-p6=ggplot(time.dat.change, aes(x=Tmin_SD.change, y=TM.change))+
+p6=ggplot(sum.data, aes(x=Tmin_SD.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
   theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ SD Min Temperature (°C)")
 
-p7=ggplot(time.dat.change, aes(x=SpC.change, y=TM.change))+
+p7=ggplot(sum.data, aes(x=spp.richness.change, y=web.modularity.change))+
   geom_point(size=2) +
   theme_bw() +
+  theme(axis.title=element_text(size=9)) +
   ylab("Δ Modularity") +
   xlab("Δ Species Richness")
   
@@ -1513,9 +1622,229 @@ p7=ggplot(time.dat.change, aes(x=SpC.change, y=TM.change))+
 plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
 ```
 
+Raw:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(sum.data, aes(x=Tavg, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("Mean Temperature (°C)")
+  
 
+p2=ggplot(sum.data, aes(x=Pr, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("Precipitation (mm)")
 
+p3=ggplot(sum.data, aes(x=Tmax, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("Max Temperature (°C)")
 
+p4=ggplot(sum.data, aes(x=Tmax_SD, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("SD Max Temperature (°C)")
+
+p5=ggplot(sum.data, aes(x=Tmin, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("Min Temperature (°C)")
+
+p6=ggplot(sum.data, aes(x=Tmin_SD, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("SD Min Temperature (°C)")
+
+p7=ggplot(sum.data, aes(x=spp.richness, y=NOS))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("NOS") +
+  xlab("Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
+
+1st Diff:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(sum.data, aes(x=Tavg.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ Mean Temperature (°C)")
+  
+
+p2=ggplot(sum.data, aes(x=Pr.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ Precipitation (mm)")
+
+p3=ggplot(sum.data, aes(x=Tmax.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ Max Temperature (°C)")
+
+p4=ggplot(sum.data, aes(x=Tmax_SD.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ SD Max Temperature (°C)")
+
+p5=ggplot(sum.data, aes(x=Tmin.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ Min Temperature (°C)")
+
+p6=ggplot(sum.data, aes(x=Tmin_SD.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ SD Min Temperature (°C)")
+
+p7=ggplot(sum.data, aes(x=spp.richness.change, y=NOS.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ NOS") +
+  xlab("Δ Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
+
+Raw:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(sum.data, aes(x=Tavg, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("Mean Temperature (°C)")
+  
+
+p2=ggplot(sum.data, aes(x=Pr, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("Precipitation (mm)")
+
+p3=ggplot(sum.data, aes(x=Tmax, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("Max Temperature (°C)")
+
+p4=ggplot(sum.data, aes(x=Tmax_SD, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("SD Max Temperature (°C)")
+
+p5=ggplot(sum.data, aes(x=Tmin, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("Min Temperature (°C)")
+
+p6=ggplot(sum.data, aes(x=Tmin_SD, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("SD Min Temperature (°C)")
+
+p7=ggplot(sum.data, aes(x=spp.richness, y=connectance))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Connectance") +
+  xlab("Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
+
+1st Diff:
+```{r, fig.height=6, fig.width=4}
+p1=ggplot(sum.data, aes(x=Tavg.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ Mean Temperature (°C)")
+  
+
+p2=ggplot(sum.data, aes(x=Pr.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ Precipitation (mm)")
+
+p3=ggplot(sum.data, aes(x=Tmax.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ Max Temperature (°C)")
+
+p4=ggplot(sum.data, aes(x=Tmax_SD.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ SD Max Temperature (°C)")
+
+p5=ggplot(sum.data, aes(x=Tmin.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ Min Temperature (°C)")
+
+p6=ggplot(sum.data, aes(x=Tmin_SD.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ SD Min Temperature (°C)")
+
+p7=ggplot(sum.data, aes(x=spp.richness.change, y=Connectance.change))+
+  geom_point(size=2) +
+  theme_bw() +
+  theme(axis.title=element_text(size=9)) +
+  ylab("Δ Connectance") +
+  xlab("Δ Species Richness")
+  
+  
+plot_grid(p1, p2, p3, p4, p5, p6, p7, ncol=2)
+```
 
 ## References:
 
